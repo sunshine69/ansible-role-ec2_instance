@@ -1,0 +1,21 @@
+---
+# defaults file for ec2_instanceami_image_name: ubuntu-1404
+ami_specified: no
+ec2_instance_base_tags:
+  BuildLayer: "{{ ami_build_layer | default() }}"
+  Application: "{{ role_type | default() }}"
+  Platform: "{{ platform | default() }}"
+  Environment: "{{ env|default() }}"
+ec2_instance_search_tags: "{{ ec2_instance_base_tags | combine({'Branch': ['master'] | union([branch] if branch is defined else [])}) }}"
+ec2_instance_creation_tags: "{{ ec2_instance_base_tags | combine({'Branch': branch|default('master'), 'Name': ec2_instance_name}) }}"
+ec2_instance_extra_tags:
+  AmiParentImage: "{{ ami.ami_id }}"
+  AmiParentImageName: "{{ ami.name }}"
+  AmiParentVersion: "{{ ami.tags.Version|default() }}"
+ec2_instance_tags: "{{ ec2_instance_creation_tags | combine(ec2_instance_extra_tags) }}"
+ec2_instance_termination: false
+ec2_instance_is_public: false
+ec2_instance_monitoring: false
+ssh_via_public: "{{ ec2_instance_is_public }}"
+ec2_instance_type: t2.micro
+generate_ephemeral_key: no

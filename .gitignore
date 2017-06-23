@@ -1,0 +1,13 @@
+.tmp/
+
+*.swp
+*.orig
+*.pyc
+*.swo
+dpe_drupal.tar.bz2*
+.DS_Store
+roles/test_*
+tests/test-*
+*.bak
+roles/filebeat
+*.iml

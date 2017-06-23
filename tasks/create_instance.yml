@@ -1,0 +1,181 @@
+- debug:
+    var: ec2_instance_ami_search_tags
+- name: fail if ami_image or ami search tags not set
+  fail:
+    msg: Either ami_image or ec2_instance_ami_search_tags must be set
+  when:
+    - ami_image is not defined or not ami_image
+    - ec2_instance_ami_search_tags is not defined or not ec2_instance_ami_search_tags
+
+- name: find base AMI from tags
+  ec2_ami_find:
+    ami_id: "{{ ami_image|default(omit) }}"
+    region: "{{region}}"
+    profile: "{{ profile|default(omit) }}"
+    ami_tags: "{{ ec2_instance_ami_search_tags|default(omit) }}"
+    sort: creationDate
+    sort_order: descending
+    sort_end: 1
+  register: ami_find
+
+- fail:
+    msg: "Can not find the base_image. Ensure your tags are correct or set ami_image directly"
+  when: not ami_find.results or ami_find.results|length == 0
+
+- name: set image fact
+  set_fact:
+    ami: "{{ ami_find.results[0] }}"
+
+- name: set instance search filters
+  set_fact:
+    ec2_instance_search_filters: "{{ ec2_instance_search_filters|default({'instance-state-name': ['running', 'stopped']})|combine({ 'tag:' + item.key: item.value }) }}"
+  with_dict: "{{ ec2_instance_search_tags }}"
+  when: item.value != ""
+
+- name: Get any existing instances that require termination
+  ec2_remote_facts:
+    region: "{{ region }}"
+    profile: "{{ profile|default(omit) }}"
+    filters: "{{ ec2_instance_search_filters }}"
+  register: ec2_instances
+
+- name: Terminate undesired existing instances
+  ec2:
+    region: "{{ region }}"
+    profile: "{{ profile|default(omit) }}"
+    instance_ids: "{{ item.id }}"
+    state: absent
+  with_items: "{{ ec2_instances.instances }}"
+  when: ec2_instance_termination|bool
+
+- block:
+  - name: create ephemeral ssh key
+    command: ssh-keygen -b 2048 -N '' -f ~/.ssh/{{ ec2_key_pair }}
+    args:
+      creates: ~/.ssh/{{ ec2_key_pair }}
+
+  - name: upload key to AWS
+    ec2_key:
+      region: "{{ region }}"
+      profile: "{{ profile|default(omit) }}"
+      key_material: "{{ lookup('file', '~/.ssh/{{ ec2_key_pair }}.pub') }}"
+      name: "{{ ec2_key_pair }}"
+      force: no
+  when: generate_ephemeral_key|bool
+
+- block:
+  - name: Get subnets id of {{ ec2_subnet_name }}
+    ec2_vpc_subnet_facts:
+      region: "{{ region }}"
+      profile: "{{ profile|default(omit) }}"
+      filters:
+        "tag:Name": "{{ ec2_subnet_name }}"
+    register: ami_build_subnets
+
+  - name: Set instance build tags
+    set_fact:
+    args:
+      ec2_instance_build_tags: "{{ ec2_instance_build_tags|default({})|combine({item.key: item.value}) }}"
+    with_dict: "{{ ec2_instance_tags }}"
+    when: item.value != ""
+
+  - debug:
+      msg: "Instance profile: {{ec2_instance_profile|default('None')}}"
+      verbosity: 2
+
+  - name: Launch EC2 instance
+    ec2:
+      region: "{{ region }}"
+      profile: "{{ profile|default(omit) }}"
+      key_name: "{{ ec2_key_pair }}"
+      group: "{{ ec2_instance_security_groups }}"
+      instance_type: "{{ ec2_instance_type }}"
+      monitoring: "{{ ec2_instance_monitoring }}"
+      user_data: "{{ ec2_instance_user_data|default(lookup('file', 'userdata.sh')) }}"
+      image: "{{ ami.ami_id }}"
+      wait: yes
+      volumes: "{{ ec2_volumes | default(default_volumes)}}"
+      vpc_subnet_id: "{{ ami_build_subnets.subnets[0].id }}"
+      assign_public_ip: "{{ ec2_instance_is_public }}"
+      instance_tags: "{{ ec2_instance_build_tags }}"
+      instance_profile_name: "{{ ec2_instance_profile|default(omit) }}"
+      private_ip: "{{ ec2_instance_private_ip_address|default(omit) }}"
+    register: ec2_build_instance
+
+  - name: set ec2_instance fact
+    set_fact:
+      ec2_instance: "{{ ec2_build_instance.instances[0] }}"
+
+  - name: set ec2 EIP if available
+    ec2_eip:
+      region: "{{ region }}"
+      profile: "{{ profile|default(omit) }}"
+      device_id: "{{ ec2_instance.id }}"
+      public_ip: "{{ ec2_eip }}"
+      reuse_existing_ip_allowed: yes
+      in_vpc: yes
+    when: ec2_eip is defined
+
+  - name: find bastion host
+    ec2_remote_facts:
+      region: "{{ region }}"
+      profile: "{{ profile|default(omit) }}"
+      filters:
+        "tag:Application": bastion
+        instance-state-name: "running"
+    register: bastion_host
+    when: not ssh_via_public
+
+
+  - name: Wait for ssh to become available
+    wait_for:
+      port: 22
+      host: "{{ ec2_eip|default(ec2_instance.public_ip) if ssh_via_public else ec2_instance.private_ip }}"
+      search_regex: OpenSSH
+      delay: 1
+    # note that `delegate_to: localhost` below will work over the `local` connection - sshd is not required
+    delegate_to: "{{ bastion_host.instances[0].public_ip_address if not bastion_host|skipped else 'localhost' }}"
+
+  - name: even after wait_for we still need to pause
+    pause:
+      seconds: 10
+  when: not ec2_instances.instances or ec2_instance_termination|bool
+
+- name: set ec2_instance fact
+  set_fact:
+    ec2_instance: "{{ ec2_instances.instances[0] }}"
+  when: ec2_build_instance|skipped
+
+- name: set ec2_instance_address fact
+  set_fact:
+    ec2_instance_address: "{{ ec2_eip|default(ec2_instance.public_ip_address)|default(ec2_instance.public_ip) if ssh_via_public else ec2_instance.private_ip_address|default(ec2_instance.private_ip) }}"
+
+- add_host:
+    hostname: "{{ ec2_instance_address }}"
+    groups: "{{ ec2_launch_groups }}"
+    ansible_ssh_private_key_file: "~/.ssh/{{ ec2_key_pair }}"
+  changed_when: false
+
+- raw: which python2 python
+  register: finding_python
+  changed_when: False
+  failed_when: False
+  delegate_to: "{{ ec2_instance_address }}"
+
+- name: Install python-minimal
+  raw: sudo apt-get update && sudo apt-get -y install python-minimal
+  delegate_to: "{{ ec2_instance_address }}"
+  when: not finding_python.stdout_lines
+
+- name: Wait for cloud-init to complete
+  wait_for:
+    path: /run/cloud-init/result.json
+  delegate_to: "{{ ec2_instance_address }}"
+
+  # Update host to set ansible_python_interpreter back
+- add_host:
+    hostname: "{{ ec2_instance_address }}"
+    groups: "{{ ec2_launch_groups }}"
+    ansible_ssh_private_key_file: "~/.ssh/{{ ec2_key_pair }}"
+    ansible_python_interpreter: /usr/bin/python
+  changed_when: false
