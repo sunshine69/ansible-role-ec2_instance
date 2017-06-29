@@ -1,6 +1,10 @@
 ---
 # defaults file for ec2_instanceami_image_name: ubuntu-1404
 ami_specified: no
+
+# If defined ami_image it will ignore the ec2_instance_search_tags below
+# ami_image:
+
 ec2_instance_base_tags:
   BuildLayer: "{{ ami_build_layer | default() }}"
   Application: "{{ role_type | default() }}"
@@ -19,3 +23,10 @@ ec2_instance_monitoring: false
 ssh_via_public: "{{ ec2_instance_is_public }}"
 ec2_instance_type: t2.micro
 generate_ephemeral_key: no
+
+# Subnet to put the ec2 instance is on. Overriding this by using
+# ec2_subnet_search_tags that allows more flexibility
+ec2_subnet_name: ""
+ec2_subnet_search_tags:
+  "tag:Name": "{{ ec2_subnet_name }}"
+ec2_subnet_search_filter: "{{ ec2_subnet_search_tags }}"
