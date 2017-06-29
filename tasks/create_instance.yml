@@ -64,11 +64,11 @@
   when: generate_ephemeral_key|bool
 
 - block:
-  - name: Get subnets id of {{ ec2_subnet_name }}
+  - name: Get subnets id of {{ ec2_subnet_name|default(ec2_subnet_search_tags) }}
     ec2_vpc_subnet_facts:
       region: "{{ region }}"
       profile: "{{ profile|default(omit) }}"
-      filters: "{{ ec2_subnet_search_filter }}"
+      filters: "{{ ec2_subnet_search_tags }}"
     register: ami_build_subnets
 
   - name: Set instance build tags
