@@ -64,7 +64,7 @@
   when: generate_ephemeral_key|bool
 
 - block:
-  - name: Get subnets id of {{ ec2_subnet_name|default(ec2_subnet_search_tags) }}
+  - name: Get subnets id based on ec2_subnet_name or ec2_subnet_search_tags
     ec2_vpc_subnet_facts:
       region: "{{ region }}"
       profile: "{{ profile|default(omit) }}"
