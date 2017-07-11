@@ -29,3 +29,4 @@ generate_ephemeral_key: no
 ec2_subnet_name: ""
 ec2_subnet_search_tags:
   "tag:Name": "{{ ec2_subnet_name }}"
+ec2_subnet_search_filter: "{{ ec2_subnet_search_tags }}"
