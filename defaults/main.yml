@@ -29,3 +29,9 @@ generate_ephemeral_key: no
 ec2_subnet_name: ""
 ec2_subnet_search_tags:
   "tag:Name": "{{ ec2_subnet_name }}"
+ec2_subnet_search_filter: "{{ ec2_subnet_search_tags }}"
+# This is ansible host group that the new EC2 instance will add itself into it.
+# Used in the next play to find out the host inventory. Depending on stage
+# (build or launch) we can add more group separated by comma ',' into it. These
+# groups should already been defined in the inventory files.
+ec2_launch_groups: "launched"
