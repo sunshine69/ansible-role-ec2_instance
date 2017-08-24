@@ -42,7 +42,10 @@
   when: ami_find.results is defined and ami_find.results
 
 - fail:
-    msg: "Can not find the base_image. Ensure your tags are correct or set ami_image directly"
+    msg: |
+      Can not find the base image. Ensure your tags are correct or set ami_image directly
+      Your search tag is: {{ ec2_instance_ami_search_tags|default('') }}
+      Your ami_image is: {{ ami_image|default('') }}
   when: not ami
 
 - name: set instance search filters
