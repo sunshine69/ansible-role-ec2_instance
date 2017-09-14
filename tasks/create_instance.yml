@@ -75,10 +75,13 @@
   when: ec2_instance_termination|bool
 
 - block:
+  - name: remove the ephemeral key if exists
+    file:
+      path: "~/.ssh/{{ ec2_key_pair }}"
+      state: absent
+
   - name: create ephemeral ssh key
     command: ssh-keygen -b 2048 -N '' -f ~/.ssh/{{ ec2_key_pair }}
-    args:
-      creates: ~/.ssh/{{ ec2_key_pair }}
 
   - name: upload key to AWS
     ec2_key:
@@ -86,7 +89,7 @@
       profile: "{{ profile|default(omit) }}"
       key_material: "{{ lookup('file', '~/.ssh/{{ ec2_key_pair }}.pub') }}"
       name: "{{ ec2_key_pair }}"
-      force: no
+      force: yes
   when: generate_ephemeral_key|bool
 
 - debug:
