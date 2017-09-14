@@ -77,8 +77,6 @@
 - block:
   - name: create ephemeral ssh key
     command: ssh-keygen -b 2048 -N '' -f ~/.ssh/{{ ec2_key_pair }}
-    args:
-      creates: ~/.ssh/{{ ec2_key_pair }}
 
   - name: upload key to AWS
     ec2_key:
