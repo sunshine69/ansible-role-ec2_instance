@@ -204,6 +204,11 @@
     path: /run/cloud-init/result.json
   delegate_to: "{{ ec2_instance_address }}"
 
+- name: Run sys upgrade if ec2_instance_sys_upgrade is set
+  raw: sudo apt-get update && sudo apt-get -y upgrade
+  delegate_to: "{{ ec2_instance_address }}"
+  when: ec2_instance_sys_upgrade is defined and ec2_instance_sys_upgrade
+
   # Update host to set ansible_python_interpreter back
 - add_host:
     hostname: "{{ ec2_instance_address }}"
