@@ -89,7 +89,7 @@
       profile: "{{ profile|default(omit) }}"
       key_material: "{{ lookup('file', '~/.ssh/{{ ec2_key_pair }}.pub') }}"
       name: "{{ ec2_key_pair }}"
-      force: no
+      force: yes
   when: generate_ephemeral_key|bool
 
 - debug:
