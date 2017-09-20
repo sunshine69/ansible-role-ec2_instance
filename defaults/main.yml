@@ -5,22 +5,31 @@ ami_specified: no
 # If defined ami_image it will ignore the ec2_instance_search_tags below
 # ami_image:
 
+# Base tags to build tags later on. Should be provided in inventory for each launch type.
 ec2_instance_base_tags:
   BuildLayer: "{{ ami_build_layer | default() }}"
   Application: "{{ role_type | default() }}"
   Platform: "{{ platform | default() }}"
   Environment: "{{ env|default() }}"
+
+# This will search the instance based on these tags. We would terminate it if
+# ec2_instance_termination is true. This add the tag Branch.
 ec2_instance_search_tags: "{{ ec2_instance_base_tags | combine({'Branch': ['master'] | union([branch] if branch is defined else [])}) }}"
+ec2_instance_termination: false
+
 ec2_instance_creation_tags: "{{ ec2_instance_base_tags | combine({'Branch': branch|default('master'), 'Name': ec2_instance_name}) }}"
 ec2_instance_extra_tags:
   AmiParentImage: "{{ ami.ami_id }}"
   AmiParentImageName: "{{ ami.name }}"
   AmiParentVersion: "{{ ami.tags.Version|default() }}"
+
+# This will create tags for the ec2 instance
 ec2_instance_tags: "{{ ec2_instance_creation_tags | combine(ec2_instance_extra_tags) }}"
-ec2_instance_termination: false
+
 ec2_instance_is_public: false
 ec2_instance_monitoring: false
 ssh_via_public: "{{ ec2_instance_is_public }}"
+winrm_via_public: "{{ ec2_instance_is_public }}"
 ec2_instance_type: t2.micro
 generate_ephemeral_key: no
 
@@ -35,3 +44,8 @@ ec2_subnet_search_filter: "{{ ec2_subnet_search_tags }}"
 # (build or launch) we can add more group separated by comma ',' into it. These
 # groups should already been defined in the inventory files.
 ec2_launch_groups: "launched"
+# By default the host we are going to launch is not window host. This affect
+# how we wait for the ansible transport (ssh or winrm)
+is_window: False
+ssh_port: 22
+winrm_port: 5986
