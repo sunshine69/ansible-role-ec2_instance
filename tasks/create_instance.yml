@@ -177,6 +177,7 @@
       port: "{{ winrm_port }}"
       host: "{{ ec2_eip|default(ec2_instance.public_ip) if winrm_via_public else ec2_instance.private_ip }}"
       delay: 1
+      timeout: 600
     when: is_window
 
   - name: even after wait_for we still need to pause
