@@ -1,2 +1,3 @@
 ---
 # vars file for ec2_instance
+ami_search_tags: "{{ ec2_instance_ami_search_tags }}"
