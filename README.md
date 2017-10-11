@@ -16,7 +16,12 @@ A description of the settable variables for this role should go here, including 
 Dependencies
 ------------
 
-A list of other roles hosted on Galaxy should go here, plus any details in regards to parameters that may need to be set for other roles, or variables that are used from other roles.
+- lookup_ec2_ami to get the dict 'ami' for this role to use it in launching the instance.
+
+lookup_ec2_ami expects the input var ami_search_tags
+This role input is ec2_instance_ami_search_tags so make sure you pass correct var when calling lookup_ec2_ami.
+
+See the meta/dependencies commented lines for hint.
 
 Example Playbook
 ----------------

@@ -1,4 +1,5 @@
 # The ami dict is the result of role lookup_ec2_ami set in the role dependencies
+# You have to call that role first to get it
 
 - fail:
     msg: |
