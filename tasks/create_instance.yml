@@ -171,7 +171,8 @@
       delegate_to: "{{ ec2_instance_address }}"
 
     - name: Install python-minimal
-      raw: sudo apt-get update && sudo apt-get -y install python-minimal
+      raw: apt-get update && apt-get -y install python-minimal
+      become: yes
       delegate_to: "{{ ec2_instance_address }}"
       when: not finding_python.stdout_lines
 
@@ -179,6 +180,7 @@
       wait_for:
         path: /run/cloud-init/result.json
       delegate_to: "{{ ec2_instance_address }}"
+      become: yes
 
     # Update host to set ansible_python_interpreter back
     - add_host:
