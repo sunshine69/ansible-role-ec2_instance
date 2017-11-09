@@ -11,12 +11,7 @@ Any pre-requisites that may not be covered by Ansible itself or the role should 
 Role Variables
 --------------
 
-Non settable variables in vars/main.yml
-
-- ami_search_tags
-This is to give the dependent role lookup_ec2_ami
-
-This role input is ec2_instance_ami_search_tags so ami_search_tags will be set using ec2_instance_ami_search_tags when calling lookup_ec2_ami.
+* `ami_search_tags` - used by `lookup_ec2_ami` role to find the AMI on which to base the instance
 
 Dependencies
 ------------

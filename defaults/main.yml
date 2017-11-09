@@ -25,6 +25,7 @@ ec2_instance_extra_tags:
 
 # This will create tags for the ec2 instance
 ec2_instance_tags: "{{ ec2_instance_creation_tags | combine(ec2_instance_extra_tags) }}"
+ami_search_tags: "{{ ec2_instance_ami_search_tags|default({}) }}"
 
 ec2_instance_is_public: false
 ec2_instance_monitoring: false
