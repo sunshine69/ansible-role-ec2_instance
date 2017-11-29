@@ -105,6 +105,8 @@
 
   - name: "Auto allocate eip if variable ec2_eip has the value of 'auto'"
     ec2_eip:
+      profile: "{{ profile|default(omit) }}"
+      region: "{{ region }}"
       state: present
     register: eip_auto
     when: ec2_eip is defined and ec2_eip == 'auto'
@@ -121,6 +123,7 @@
       device_id: "{{ ec2_instance.id }}"
       public_ip: "{{ ec2_eip }}"
       reuse_existing_ip_allowed: yes
+      release_on_disassociation: "{{ ec2_eip_release_on_disassociation|default(false) }}"
       in_vpc: yes
     when: ec2_eip is defined
 
