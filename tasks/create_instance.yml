@@ -107,6 +107,7 @@
     ec2_eip:
       profile: "{{ profile|default(omit) }}"
       region: "{{ region }}"
+      reuse_existing_ip_allowed: yes
       state: present
     register: eip_auto
     when: ec2_eip is defined and ec2_eip == 'auto'
@@ -169,8 +170,13 @@
   set_fact:
     ec2_instance_address: "{{ ec2_eip|default(ec2_instance.public_ip_address)|default(ec2_instance.public_ip) if ssh_via_public else ec2_instance.private_ip_address|default(ec2_instance.private_ip) }}"
 
+- name: set ec2_instance_public_address fact
+  set_fact:
+    ec2_instance_public_address: "{{ ec2_eip|default(ec2_instance.public_ip_address)|default(ec2_instance.public_ip) if ec2_instance_is_public else '' }}"
+
 - add_host:
     hostname: "{{ ec2_instance_address }}"
+    public_ip: "{{ ec2_instance_public_address|default('') }}"
     groups: "{{ ec2_launch_groups }}"
     ansible_ssh_private_key_file: "~/.ssh/{{ ec2_key_pair }}"
     inventory_dir: "{{ inventory_dir }}"  # workaround for https://github.com/ansible/ansible/issues/30901
