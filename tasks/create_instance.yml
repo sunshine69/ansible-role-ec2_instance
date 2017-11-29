@@ -99,10 +99,6 @@
       private_ip: "{{ ec2_instance_private_ip_address|default(omit) }}"
     register: ec2_build_instance
 
-  - name: set ec2_instance fact
-    set_fact:
-      ec2_instance: "{{ ec2_build_instance.instances[0] }}"
-
   - name: "Auto allocate eip if variable ec2_eip has the value of 'auto'"
     ec2_eip:
       profile: "{{ profile|default(omit) }}"
@@ -127,6 +123,13 @@
       release_on_disassociation: "{{ ec2_eip_release_on_disassociation|default(false) }}"
       in_vpc: yes
     when: ec2_eip is defined
+
+  - name: Get newly created instances facts
+    ec2_remote_facts:
+      region: "{{ region }}"
+      profile: "{{ profile|default(omit) }}"
+      filters: "{{ ec2_instance_search_filters }}"
+    register: ec2_instances
 
   - name: find bastion host
     ec2_remote_facts:
