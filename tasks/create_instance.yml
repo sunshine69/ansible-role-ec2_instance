@@ -20,7 +20,7 @@
     verbosity: 2
 
 - name: Get any existing instances that require termination
-  ec2_remote_facts:
+  ec2_instance_facts:
     region: "{{ region }}"
     profile: "{{ profile|default(omit) }}"
     filters: "{{ ec2_instance_search_filters }}"
@@ -125,7 +125,7 @@
     when: ec2_eip is defined
 
   - name: Get newly created instances facts
-    ec2_remote_facts:
+    ec2_instance_facts:
       region: "{{ region }}"
       profile: "{{ profile|default(omit) }}"
       filters: "{{ ec2_instance_search_filters }}"
@@ -146,7 +146,7 @@
   when: existing_ec2_instances.instances and not ec2_instance_termination|bool
 
 - name: find bastion host
-  ec2_remote_facts:
+  ec2_instance_facts:
     region: "{{ region }}"
     profile: "{{ profile|default(omit) }}"
     filters:
