@@ -20,11 +20,11 @@
     verbosity: 2
 
 - name: Get any existing instances that require termination
-  ec2_remote_facts:
+  ec2_instance_facts:
     region: "{{ region }}"
     profile: "{{ profile|default(omit) }}"
     filters: "{{ ec2_instance_search_filters }}"
-  register: ec2_instances
+  register: existing_ec2_instances
 
 - name: Terminate undesired existing instances
   ec2:
@@ -32,7 +32,7 @@
     profile: "{{ profile|default(omit) }}"
     instance_ids: "{{ item.id }}"
     state: absent
-  with_items: "{{ ec2_instances.instances }}"
+  with_items: "{{ existing_ec2_instances.instances }}"
   when: ec2_instance_termination|bool
 
 - block:
@@ -99,14 +99,11 @@
       private_ip: "{{ ec2_instance_private_ip_address|default(omit) }}"
     register: ec2_build_instance
 
-  - name: set ec2_instance fact
-    set_fact:
-      ec2_instance: "{{ ec2_build_instance.instances[0] }}"
-
   - name: "Auto allocate eip if variable ec2_eip has the value of 'auto'"
     ec2_eip:
       profile: "{{ profile|default(omit) }}"
       region: "{{ region }}"
+      reuse_existing_ip_allowed: yes
       state: present
     register: eip_auto
     when: ec2_eip is defined and ec2_eip == 'auto'
@@ -120,54 +117,65 @@
     ec2_eip:
       region: "{{ region }}"
       profile: "{{ profile|default(omit) }}"
-      device_id: "{{ ec2_instance.id }}"
+      device_id: "{{ ec2_build_instance.instances[0].id }}"
       public_ip: "{{ ec2_eip }}"
       reuse_existing_ip_allowed: yes
       release_on_disassociation: "{{ ec2_eip_release_on_disassociation|default(false) }}"
       in_vpc: yes
     when: ec2_eip is defined
 
-  - name: find bastion host
-    ec2_remote_facts:
+  - name: Get newly created instances facts
+    ec2_instance_facts:
       region: "{{ region }}"
       profile: "{{ profile|default(omit) }}"
-      filters:
-        "tag:Application": bastion
-        instance-state-name: "running"
-    register: bastion_host
-    when: not ssh_via_public and not is_window
+      filters: "{{ ec2_instance_search_filters }}"
+    register: ec2_instances
 
-  - name: Wait for ssh to become available
-    wait_for:
-      port: "{{ ssh_port }}"
-      host: "{{ ec2_eip|default(ec2_instance.public_ip) if ssh_via_public else ec2_instance.private_ip }}"
-      search_regex: OpenSSH
-      delay: 1
-    # note that `delegate_to: localhost` below will work over the `local` connection - sshd is not required
-    delegate_to: "{{ bastion_host.instances[0].public_ip_address if not bastion_host|skipped else 'localhost' }}"
-    when: not is_window
-
-  - name: Wait for winrm service to become available
-    wait_for:
-      port: "{{ winrm_port }}"
-      host: "{{ ec2_eip|default(ec2_instance.public_ip) if winrm_via_public else ec2_instance.private_ip }}"
-      delay: 1
-      timeout: 600
-    when: is_window
+  - name: Set fact ec2_instance
+    set_fact:
+      ec2_instance: "{{ ec2_instances.instances[0] }}"
 
   - name: even after wait_for we still need to pause
     pause:
       seconds: 10
-  when: not ec2_instances.instances or ec2_instance_termination|bool
+  when: not existing_ec2_instances.instances or ec2_instance_termination|bool
 
-- name: set ec2_instance fact
+- name: Set fact ec2_instance for existing_ec2_instance
   set_fact:
-    ec2_instance: "{{ ec2_instances.instances[0] }}"
-  when: ec2_build_instance|skipped
+    ec2_instance: "{{ existing_ec2_instances.instances[0] }}"
+  when: existing_ec2_instances.instances and not ec2_instance_termination|bool
+
+- name: find bastion host
+  ec2_instance_facts:
+    region: "{{ region }}"
+    profile: "{{ profile|default(omit) }}"
+    filters:
+      "tag:Application": bastion
+      instance-state-name: "running"
+  register: bastion_host
+  when: not ssh_via_public and not is_window
+
+- name: Wait for ssh to become available
+  wait_for:
+    port: "{{ ssh_port }}"
+    host: "{{ ec2_eip|default(ec2_instance.public_ip_address) if ssh_via_public else ec2_instance.private_ip_address }}"
+    search_regex: OpenSSH
+    delay: 1
+  # note that `delegate_to: localhost` below will work over the `local` connection - sshd is not required
+  delegate_to: "{{ bastion_host.instances[0].public_ip_address if not bastion_host|skipped else 'localhost' }}"
+  when: not is_window
+
+- name: Wait for winrm service to become available
+  wait_for:
+    port: "{{ winrm_port }}"
+    host: "{{ ec2_eip|default(ec2_instance.public_ip_address) if winrm_via_public else ec2_instance.private_ip_address }}"
+    delay: 1
+    timeout: 600
+  when: is_window
 
 - name: set ec2_instance_address fact
   set_fact:
-    ec2_instance_address: "{{ ec2_eip|default(ec2_instance.public_ip_address)|default(ec2_instance.public_ip) if ssh_via_public else ec2_instance.private_ip_address|default(ec2_instance.private_ip) }}"
+    ec2_instance_address: "{{ ec2_eip|default(ec2_instance.public_ip_address) if ssh_via_public else ec2_instance.private_ip_address }}"
 
 - add_host:
     hostname: "{{ ec2_instance_address }}"
