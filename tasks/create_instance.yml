@@ -30,7 +30,7 @@
   ec2:
     region: "{{ region }}"
     profile: "{{ profile|default(omit) }}"
-    instance_ids: "{{ item.id }}"
+    instance_ids: "{{ item.instance_id }}"
     state: absent
   with_items: "{{ existing_ec2_instances.instances }}"
   when: ec2_instance_termination|bool
