@@ -155,10 +155,14 @@
   register: bastion_host
   when: not ssh_via_public and not is_window
 
+- name: set ec2_instance_address fact
+  set_fact:
+    ec2_instance_address: "{{ ec2_eip|default(ec2_instance.public_ip_address) if (ssh_via_public or winrm_via_public) else ec2_instance.private_ip_address }}"
+
 - name: Wait for ssh to become available
   wait_for:
     port: "{{ ssh_port }}"
-    host: "{{ ec2_eip|default(ec2_instance.public_ip_address) if ssh_via_public else ec2_instance.private_ip_address }}"
+    host: "{{ ec2_instance_address }}"
     search_regex: OpenSSH
     delay: 1
   # note that `delegate_to: localhost` below will work over the `local` connection - sshd is not required
@@ -168,14 +172,10 @@
 - name: Wait for winrm service to become available
   wait_for:
     port: "{{ winrm_port }}"
-    host: "{{ ec2_eip|default(ec2_instance.public_ip_address) if winrm_via_public else ec2_instance.private_ip_address }}"
+    host: "{{ ec2_instance_address }}"
     delay: 1
     timeout: 600
   when: is_window
-
-- name: set ec2_instance_address fact
-  set_fact:
-    ec2_instance_address: "{{ ec2_eip|default(ec2_instance.public_ip_address) if ssh_via_public else ec2_instance.private_ip_address }}"
 
 - add_host:
     hostname: "{{ ec2_instance_address }}"
