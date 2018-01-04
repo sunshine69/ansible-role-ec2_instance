@@ -29,8 +29,8 @@ ami_search_tags: "{{ ec2_instance_ami_search_tags|default({}) }}"
 
 ec2_instance_is_public: false
 ec2_instance_monitoring: false
-ssh_via_public: "{{ ec2_instance_is_public }}"
-winrm_via_public: "{{ ec2_instance_is_public }}"
+ssh_via_public: false
+winrm_via_public: false
 ec2_instance_type: t2.micro
 generate_ephemeral_key: no
 
