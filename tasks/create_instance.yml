@@ -80,6 +80,20 @@
       msg: "ec2_instance_build_tags: {{ ec2_instance_build_tags }}"
       verbosity: 2
 
+  - name: Convert vol tags from dict to filter
+    set_fact:
+      ec2_instance_vol_tags_filter: "{{ {}|combine({'tag:'+item.key: item.value}) }}"
+    with_dict: "{{ ec2_instance_vol_tags }}"
+    when: ec2_instance_vol_tags
+
+  - name: Detect persistent volumes for ec2 by tags
+    ec2_vol_facts:
+      region: "{{ region }}"
+      profile: "{{ profile|default(omit) }}"
+      filters: "{{ ec2_instance_vol_tags_filter }}"
+    register: ec2_vol_facts_out
+    when: ec2_instance_vol_tags_filter
+
   - name: Launch EC2 instance
     ec2:
       region: "{{ region }}"
@@ -98,6 +112,15 @@
       instance_profile_name: "{{ ec2_instance_profile|default(omit) }}"
       private_ip: "{{ ec2_instance_private_ip_address|default(omit) }}"
     register: ec2_build_instance
+
+  - name: Attach persistent volumes to the instance
+    ec2_vol:
+      region: "{{ region }}"
+      profile: "{{ profile|default(omit) }}"
+      id: "{{ item.id }}"
+      instance: "{{ ec2_build_instance.instances[0].id }}"
+    with_items: "{{ ec2_vol_facts_out.volumes }}"
+    when: ec2_vol_facts_out.volumes
 
   - name: "Auto allocate eip if variable ec2_eip has the value of 'auto'"
     ec2_eip:

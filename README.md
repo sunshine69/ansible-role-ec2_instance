@@ -12,6 +12,9 @@ Role Variables
 --------------
 
 * `ami_search_tags` - used by `lookup_ec2_ami` role to find the AMI on which to base the instance
+* `ec2_instance_vol_tags` - This is a dict set of key/value of a volume that is
+   going to be attached to the instance. The volume must be created before and
+   must be available for attach.
 
 Dependencies
 ------------
