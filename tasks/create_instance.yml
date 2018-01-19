@@ -260,7 +260,7 @@
     command: create
     zone: "{{ env }}.{{ tld_name_internal }}"
     record: "{{ ec2_instance_private_dns }}"
-    value: "{{ ansible_default_ipv4.address }}"
+    value: "{{ ec2_instance.private_ip_address }}"
     type: A
     ttl: 300
     overwrite: yes
@@ -277,7 +277,7 @@
     zone: "xvt.technology"
     record: "{{ ec2_instance_public_dns }}"
     command: create
-    value: "{{ ec2_instance.public_ip_address|default(ec2_instance.public_ip) }}"
+    value: "{{ ec2_instance.public_ip_address }}"
     overwrite: true
   when: ec2_instance_public_dns is defined and ec2_instance_public_dns
 
