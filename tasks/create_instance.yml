@@ -279,7 +279,7 @@
     command: create
     value: "{{ ec2_instance.public_ip_address|default(ec2_instance.public_ip) }}"
     overwrite: true
-	when: ec2_instance_public_dns is defined and ec2_instance_public_dns
+  when: ec2_instance_public_dns is defined and ec2_instance_public_dns
 
 - debug:
     var: ec2_instance
