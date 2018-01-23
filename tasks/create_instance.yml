@@ -57,22 +57,23 @@
     var: ec2_subnet_search_filter
     verbosity: 2
 
-- name: Convert vol tags from dict to filter
-  set_fact:
-    ec2_instance_persistent_vol_tags_filter: "{{ {}|combine({'tag:'+item.key: item.value}) }}"
-  with_dict: "{{ ec2_instance_persistent_vol_tags }}"
-  when: ec2_instance_persistent_vol_tags is defined and ec2_instance_persistent_vol_tags
+- block:
+    - name: Convert vol tags from dict to filter
+      set_fact:
+        ec2_instance_persistent_vol_tags_filter: "{{ ec2_instance_persistent_vol_tags_filter|default({})|combine({'tag:'+item.key: item.value}) }}"
+      with_dict: "{{ ec2_instance_persistent_vol_tags }}"
 
-- debug:
-    var: ec2_instance_persistent_vol_tags_filter
+    - debug:
+        var: ec2_instance_persistent_vol_tags_filter
+        verbosity: 2
 
-- name: Detect persistent volumes for ec2 by tags
-  ec2_vol_facts:
-    region: "{{ region }}"
-    profile: "{{ profile|default(omit) }}"
-    filters: "{{ ec2_instance_persistent_vol_tags_filter }}"
-  register: ec2_vol_facts_out
-  when: ec2_instance_persistent_vol_tags_filter is defined and ec2_instance_persistent_vol_tags_filter
+    - name: Detect persistent volumes for ec2 by tags
+      ec2_vol_facts:
+        region: "{{ region }}"
+        profile: "{{ profile|default(omit) }}"
+        filters: "{{ ec2_instance_persistent_vol_tags_filter }}"
+      register: ec2_vol_facts_out
+  when: ec2_instance_persistent_vol_tags
 
 - block:
   - name: Get subnets ids based on ec2_subnet_search_filter
