@@ -29,7 +29,7 @@ ec2_instance_tags: "{{ ec2_instance_creation_tags | combine(ec2_instance_extra_t
 # This is a dict set of key/value of a volume that is going to be attached to
 # the instance. The volume must be created before and must be available for
 # attach.
-ec2_instance_vol_tags: {}
+ec2_instance_persistent_vol_tags: {}
 
 ami_search_tags: "{{ ec2_instance_ami_search_tags|default({}) }}"
 
