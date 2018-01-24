@@ -172,8 +172,7 @@
     instance: "{{ ec2_instance.instance_id }}"
     device_name: "{{ item.tags.Device | default(omit) }}"
     delete_on_termination: "{{ item.tags.delete_on_termination|default('no') }}"
-  with_items: "{{ ec2_vol_facts_out.volumes }}"
-  when: ec2_vol_facts_out.volumes is defined and ec2_vol_facts_out.volumes
+  with_items: "{{ ec2_vol_facts_out|default({}).volumes|default([]) }}"
 
 - name: find bastion host
   ec2_instance_facts:
