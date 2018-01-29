@@ -16,6 +16,18 @@ Role Variables
    going to be attached to the instance. The volume must be created before and
    must be available for attach.
 
+* `ec2_instance_public_dns`
+* `ec2_instance_private_dns`
+   These dns will be created via route53 if they are of string type. The public will use
+   the aws account specified in the variable below in the zone below.
+
+* `ec2_instance_route53_public_zone` - The public zone that we are going to create the public DNS entry. 
+   Default: xvt.technology
+ 
+* `aws_route53_profile` - The aws profile used to create public route53 entry.
+   Optional and will use the current ec2 IAM profile to assume iam role
+   route53_admin in the aws account if not provided.
+
 Dependencies
 ------------
 

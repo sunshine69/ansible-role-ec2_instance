@@ -56,7 +56,3 @@ ec2_launch_groups: "launched"
 is_window: False
 ssh_port: 22
 winrm_port: 5986
-# These dns will be created via route53 if it is a string. The public will use
-# the xvt_aws account in the zone xvt.technology for now.
-ec2_instance_public_dns: False
-ec2_instance_private_dns: False
