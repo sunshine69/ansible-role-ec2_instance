@@ -255,7 +255,7 @@
 
 - name: Make route53 private DNS
   route53:
-    profile: "{{ aws_account_name }}"
+    profile: "{{ aws_account_name|default(omit) }}"
     private_zone: true
     command: create
     zone: "{{ env }}.{{ tld_name_internal }}"
@@ -271,10 +271,10 @@
 
 - name: Make route53 public DNS
   route53:
-    profile: "xvt_aws"
+    profile: "{{ route53_public_aws_profile|default('xvt_aws') }}"
     private_zone: false
     type: A
-    zone: "xvt.technology"
+    zone: "{{ route53_public_zone|default('xvt.technology') }}"
     record: "{{ ec2_instance_public_dns }}"
     command: create
     value: "{{ ec2_instance.public_ip_address }}"
