@@ -256,6 +256,7 @@
     name: aws_route53
   vars:
     aws_route53_profile_account: "{{ aws_account_name }}"
+    aws_route53_profile: "{{  aws_route53_profile_private|default(False) }}"
     aws_route53:
       private_zone: true
       zone: "{{ env }}.{{ tld_name_internal }}"
@@ -268,6 +269,7 @@
 - include_role:
     name: aws_route53
   vars:
+    aws_route53_profile: "{{  aws_route53_profile_public|default(False) }}"
     aws_route53:
       private_zone: false
       zone: "{{ ec2_instance_route53_public_zone|default('xvt.technology') }}"

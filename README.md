@@ -24,9 +24,11 @@ Role Variables
 * `ec2_instance_route53_public_zone` - The public zone that we are going to create the public DNS entry. 
    Default: xvt.technology
  
-* `aws_route53_profile` - The aws profile used to create public route53 entry.
+* `aws_route53_profile_public` - The aws profile used to create public route53 entry.
    Optional and will use the current ec2 IAM profile to assume iam role
    route53_admin in the aws account if not provided.
+
+* `aws_route53_profile_private` - Same as above but for private zone   
 
 Dependencies
 ------------
