@@ -283,9 +283,14 @@
         names:
           - "{{ ec2_instance_target_target_group }}"
       register: ec2_target_group_facts
-    # There is no anisble module can do it at the moment.
+    # Requires this PR https://github.com/ansible/ansible/pull/26483
     - name: Register the ec2 instance with target group
-      command: "aws elbv2 register-targets --target-group-arn {{ ec2_target_group_facts.target_groups.0.target_group_arn }} --targets Id={{ ec2_instance.instance_id }} {{ '--profile ' + profile if profile else '' }} --region {{ region }}"
+      elb_target:
+        target_group_name: "{{ ec2_target_group_facts.target_groups.0.target_group_name }}"
+        target_id: "{{ ec2_instance.instance_id }}"
+        state: present
+        profile: "{{ profile|default(omit) }}"
+        region: "{{ region }}"
       when: ec2_target_group_facts.target_groups is defined and ec2_target_group_facts.target_groups
   when: ec2_instance_target_target_group is defined and ec2_instance_target_target_group
   delegate_to: localhost
