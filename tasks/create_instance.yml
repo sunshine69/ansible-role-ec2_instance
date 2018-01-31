@@ -283,6 +283,9 @@
         names:
           - "{{ ec2_instance_target_target_group }}"
       register: ec2_target_group_facts
+    - fail:
+        msg: "ERROR - ec2_instance_target_target_group is defined and set to {{ ec2_instance_target_target_group }} but we can not find any target_group with that name"
+      when: not ec2_target_group_facts.target_groups
     # Requires this PR https://github.com/ansible/ansible/pull/26483
     - name: Register the ec2 instance with target group
       elb_target:
@@ -293,8 +296,6 @@
         region: "{{ region }}"
       when: ec2_target_group_facts.target_groups is defined and ec2_target_group_facts.target_groups
   when: ec2_instance_target_target_group is defined and ec2_instance_target_target_group
-  delegate_to: localhost
-  become: no
 
 - debug:
     var: ec2_instance
