@@ -30,11 +30,22 @@ Role Variables
 
 * `aws_route53_profile_private` - Same as above but for private zone   
 
+* `ec2_instance_target_target_group` - Optional - No default value
+   The target group name that you want to register the ec2 instance with. Do
+   nothing if it is not set.
+
+THIS ROLE HAS MORE VARIABLES THAT NOT DOCUMENTED YET HERE. SEE
+defaults/main.yml for complete list for now.
+
 Dependencies
 ------------
 
 - role: lookup_ec2_ami 
-to get the dict 'ami' for this role to use it in launching the instance.
+  to get the dict 'ami' for this role to use it in launching the instance.
+
+- Unmerged anisble PR https://github.com/ansible/ansible/pull/26483
+  For the ansible module 'elb_target' used to register the instance with a TG
+  if required.
 
 Example Playbook
 ----------------
