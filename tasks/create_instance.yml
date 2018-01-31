@@ -250,8 +250,30 @@
         groups: "{{ ec2_launch_groups }},windows"
         ec2_instance: "{{ ec2_instance }}"
       changed_when: false
-
   when: is_window
+
+- include_role:
+    name: aws_route53
+  vars:
+    aws_route53_profile_account: "{{ aws_account_name }}"
+    aws_route53_profile: "{{  aws_route53_profile_private|default() }}"
+    aws_route53:
+      private_zone: true
+      zone: "{{ env }}.{{ tld_name_internal }}"
+      record: "{{ ec2_instance_private_dns }}"
+      value: "{{ ec2_instance.private_ip_address }}"
+  when: ec2_instance_private_dns is defined and ec2_instance_private_dns
+
+- include_role:
+    name: aws_route53
+  vars:
+    aws_route53_profile: "{{  aws_route53_profile_public|default() }}"
+    aws_route53:
+      private_zone: false
+      zone: "{{ ec2_instance_route53_public_zone|default('xvt.technology') }}"
+      record: "{{ ec2_instance_public_dns }}"
+      value: "{{ ec2_instance.public_ip_address }}"
+  when: ec2_instance_public_dns is defined and ec2_instance_public_dns
 
 - debug:
     var: ec2_instance
