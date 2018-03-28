@@ -1,0 +1,20 @@
+- name: Setup filesystem for persistent volumes
+  filesystem:
+    dev: "{{ vol_item.tags.Device }}"
+    fstype: "{{ vol_item.tags.Fstype|default('ext4') }}"
+    opts: "{{ vol_item.tags.Fsopts|default(omit) }}"
+    resizefs: "{{ vol_item.tags.Resizefs|default(omit) }}"
+    force: "{{ vol_item.tags.|default('no') }}"
+
+- name: Ensure mount points are created
+  file:
+    path: "{{ vol_item.tags.Mountpath|default(vol_item.tags.Device|replace('/dev/','/mnt/')) }}"
+    state: directory
+
+- name: Setup mount point for persistent volumes
+  mount:
+    fstype: "{{ vol_item.tags.Fstype|default('ext4') }}"
+    opts: "{{ vol_item.tags.Mountopts|default(omit) }}"
+    path: "{{ vol_item.tags.Mountpath|default(vol_item.tags.Device|replace('/dev/','/mnt/')) }}"
+    src: "{{ vol_item.tags.Device }}"
+    state: mounted
