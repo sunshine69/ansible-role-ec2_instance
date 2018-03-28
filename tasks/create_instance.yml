@@ -233,7 +233,7 @@
       delegate_to: "{{ ec2_instance_address }}"
       become: yes
 
-    - import_tasks: setup-filesystem.yml
+    - include_tasks: setup-filesystem.yml
       with_items: "{{ (ec2_vol_facts_out|default({})).volumes|default([]) }}"
       loop_control:
         loop_var: vol_item
