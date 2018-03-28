@@ -1,6 +1,14 @@
+# To simplify things we only make one partition per disk - if we need several
+# storage. in aws just create another volume.
+- name: Setup partition
+  parted:
+    device: "{{ vol_item.tags.Device }}"
+    number: 1
+    state: present
+
 - name: Setup filesystem for persistent volumes
   filesystem:
-    dev: "{{ vol_item.tags.Device }}"
+    dev: "{{ vol_item.tags.Device }}1"
     fstype: "{{ vol_item.tags.Fstype|default('ext4') }}"
     opts: "{{ vol_item.tags.Fsopts|default(omit) }}"
     resizefs: "{{ vol_item.tags.Resizefs|default(omit) }}"
@@ -8,7 +16,7 @@
 
 - name: Ensure mount points are created
   file:
-    path: "{{ vol_item.tags.Mountpath|default(vol_item.tags.Device|replace('/dev/','/mnt/')) }}"
+    path: "{{ vol_item.tags.Mountpath|default(vol_item.tags.Device|replace('/dev/','/mnt/')) }}1"
     state: directory
 
 - name: Setup mount point for persistent volumes
@@ -16,5 +24,5 @@
     fstype: "{{ vol_item.tags.Fstype|default('ext4') }}"
     opts: "{{ vol_item.tags.Mountopts|default(omit) }}"
     path: "{{ vol_item.tags.Mountpath|default(vol_item.tags.Device|replace('/dev/','/mnt/')) }}"
-    src: "{{ vol_item.tags.Device }}"
+    src: "{{ vol_item.tags.Device }}1"
     state: mounted
