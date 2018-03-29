@@ -233,6 +233,13 @@
       delegate_to: "{{ ec2_instance_address }}"
       become: yes
 
+    - include_tasks: setup-filesystem.yml
+      with_items: "{{ (ec2_vol_facts_out|default({})).volumes|default([]) }}"
+      become: yes
+      delegate_to: "{{ ec2_instance_address }}"
+      loop_control:
+        loop_var: vol_item
+
     # Update host to set ansible_python_interpreter back
     - add_host:
         hostname: "{{ ec2_instance_address }}"
