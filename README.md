@@ -11,6 +11,20 @@ Any pre-requisites that may not be covered by Ansible itself or the role should 
 Role Variables
 --------------
 
+* `ec2_key_pair_bastion` - Optional - No default
+  The private key file used to access the bastion hosts
+
+* `bastion_ansible_user` - Optional - Default: ubuntu
+  The ssh user name used to connect to bastion host
+
+These above vars allow us to use different ssh key and username for bastion to
+increase security and isolation. Usually in ssh config file we can specify each
+key for each group of hosts but not for bastions because bastion host IP
+address varies across aws account thus need to be dynamically set the ssh key
+and username if needed. Other than that we might get authentication errors
+because ssh send too many keys and the fail count exceeds the limit that the
+remote ssh server allows.
+
 * `ami_search_tags` - used by `lookup_ec2_ami` role to find the AMI on which to base the instance
 * `ec2_instance_vol_tags` - This is a dict set of key/value of a volume that is
    going to be attached to the instance. The volume must be created before and
@@ -21,14 +35,14 @@ Role Variables
    These dns will be created via route53 if they are of string type. The public will use
    the aws account specified in the variable below in the zone below.
 
-* `ec2_instance_route53_public_zone` - The public zone that we are going to create the public DNS entry. 
+* `ec2_instance_route53_public_zone` - The public zone that we are going to create the public DNS entry.
    Default: xvt.technology
- 
+
 * `aws_route53_profile_public` - The aws profile used to create public route53 entry.
    Optional and will use the current ec2 IAM profile to assume iam role
    route53_admin in the aws account if not provided.
 
-* `aws_route53_profile_private` - Same as above but for private zone   
+* `aws_route53_profile_private` - Same as above but for private zone
 
 * `ec2_instance_target_target_group` - Optional - No default value
    The target group name that you want to register the ec2 instance with. Do
@@ -40,7 +54,7 @@ defaults/main.yml for complete list for now.
 Dependencies
 ------------
 
-- role: lookup_ec2_ami 
+- role: lookup_ec2_ami
   to get the dict 'ami' for this role to use it in launching the instance.
 
 - Unmerged anisble PR https://github.com/ansible/ansible/pull/26483
