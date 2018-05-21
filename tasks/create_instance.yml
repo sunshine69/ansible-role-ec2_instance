@@ -188,6 +188,13 @@
   set_fact:
     ec2_instance_address: "{{ ec2_eip|default(ec2_instance.public_ip_address) if (ssh_via_public or winrm_via_public) else ec2_instance.private_ip_address }}"
 
+- name: Add host for bastion to be used for delegation in the next task
+  add_host:
+    hostname: "{{ bastion_host.instances[0].public_ip_address }}"
+    ansible_user: "{{ bastion_ansible_user|default(ec2_instance_user|default('ubuntu')) }}"
+    ansible_ssh_private_key_file: "{{ bastion_ssh_private_key_file }}"
+  when: not bastion_host|skipped and bastion_ssh_private_key_file and not is_window
+
 - name: Wait for ssh to become available
   wait_for:
     port: "{{ ssh_port }}"
