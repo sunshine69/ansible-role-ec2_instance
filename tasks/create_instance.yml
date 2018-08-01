@@ -1,4 +1,8 @@
 # The ami dict is the result of role lookup_ec2_ami
+
+- debug:
+    msg: "Going to call role lookup_ec2_ami to search for ami"
+
 - include_role:
     name: lookup_ec2_ami
 
