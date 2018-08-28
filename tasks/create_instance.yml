@@ -190,7 +190,7 @@
 
 - name: set ec2_instance_address fact
   set_fact:
-    ec2_instance_address: "{{ ec2_eip|default(ec2_instance.public_ip_address) if (ssh_via_public or winrm_via_public) else ec2_instance.private_ip_address }}"
+    ec2_instance_address: "{{ ec2_instance.public_ip_address if (ssh_via_public or winrm_via_public) else ec2_instance.private_ip_address }}"
 
 - name: Add host for bastion to be used for delegation in the next task
   add_host:
