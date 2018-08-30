@@ -190,7 +190,7 @@
 
 - name: set ec2_instance_address fact
   set_fact:
-    ec2_instance_address: "{{ ec2_eip|default(ec2_instance.public_ip_address) if (ssh_via_public or winrm_via_public) else ec2_instance.private_ip_address }}"
+    ec2_instance_address: "{{ ec2_instance.public_ip_address if (ssh_via_public or winrm_via_public) else ec2_instance.private_ip_address }}"
 
 - name: Add host for bastion to be used for delegation in the next task
   add_host:
@@ -218,6 +218,13 @@
   when: is_window
 
 - block:
+    - name: Add host ec2_instance_address to be used for delegation in the next task
+      add_host:
+        hostname: "{{ ec2_instance_address }}"
+        ansible_user: "{{ ec2_instance_user|default(bastion_ansible_user|default('ubuntu')) }}"
+        ansible_ssh_private_key_file: "~/.ssh/{{ ec2_key_pair }}"
+      when: ssh_via_public|default(False)
+
     - raw: which python2 python
       register: finding_python
       changed_when: False
@@ -248,6 +255,7 @@
         ansible_ssh_private_key_file: "~/.ssh/{{ ec2_key_pair }}"
         ansible_python_interpreter: /usr/bin/python
         ec2_instance: "{{ ec2_instance }}"
+        inventory_dir: "{{ inventory_dir }}"
       changed_when: false
   when: not is_window
 
