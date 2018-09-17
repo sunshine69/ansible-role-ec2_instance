@@ -56,3 +56,5 @@ ec2_launch_groups: "launched"
 is_window: False
 ssh_port: 22
 winrm_port: 5986
+
+route53_internal_zone: "{{ env }}.{{ tld_name_internal }}"

@@ -275,7 +275,7 @@
     aws_route53_profile: "{{  aws_route53_profile_private|default() }}"
     aws_route53:
       private_zone: true
-      zone: "{{ tld_name_internal }}"
+      zone: "{{ route53_internal_zone }}"
       record: "{{ ec2_instance_private_dns }}"
       value: "{{ ec2_instance.private_ip_address }}"
   when: ec2_instance_private_dns is defined and ec2_instance_private_dns
