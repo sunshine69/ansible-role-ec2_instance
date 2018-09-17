@@ -19,7 +19,7 @@ ec2_instance_termination: false
 
 ec2_instance_creation_tags: "{{ ec2_instance_base_tags | combine({'Branch': branch|default('master'), 'Name': ec2_instance_name}) }}"
 ec2_instance_extra_tags:
-  AmiParentImage: "{{ ami.ami_id }}"
+  AmiParentImage: "{{ ami.image_id }}"
   AmiParentImageName: "{{ ami.name }}"
   AmiParentVersion: "{{ ami.tags.Version|default() }}"
 

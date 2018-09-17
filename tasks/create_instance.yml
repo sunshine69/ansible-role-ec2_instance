@@ -111,7 +111,7 @@
       instance_type: "{{ ec2_instance_type }}"
       monitoring: "{{ ec2_instance_monitoring }}"
       user_data: "{{ ec2_instance_user_data|default(lookup('file', 'userdata.sh')) }}"
-      image: "{{ ami.ami_id }}"
+      image: "{{ ami.image_id }}"
       wait: yes
       volumes: "{{ ec2_volumes | default(default_volumes)}}"
       vpc_subnet_id: "{{ ami_build_subnets.subnets[0].id }}"
