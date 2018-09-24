@@ -111,7 +111,7 @@
       instance_type: "{{ ec2_instance_type }}"
       monitoring: "{{ ec2_instance_monitoring }}"
       user_data: "{{ ec2_instance_user_data|default(lookup('file', 'userdata.sh')) }}"
-      image: "{{ ami.ami_id }}"
+      image: "{{ ami.image_id }}"
       wait: yes
       volumes: "{{ ec2_volumes | default(default_volumes)}}"
       vpc_subnet_id: "{{ ami_build_subnets.subnets[0].id }}"
@@ -197,7 +197,7 @@
     hostname: "{{ bastion_host.instances[0].public_ip_address }}"
     ansible_user: "{{ bastion_ansible_user|default(ec2_instance_user|default('ubuntu')) }}"
     ansible_ssh_private_key_file: "~/.ssh/{{ ec2_key_pair_bastion }}"
-  when: not bastion_host|skipped and ec2_key_pair_bastion and not is_window
+  when: bastion_host is not skipped and ec2_key_pair_bastion and not is_window
 
 - name: Wait for ssh to become available
   wait_for:
@@ -206,7 +206,7 @@
     search_regex: OpenSSH
     delay: 1
   # note that `delegate_to: localhost` below will work over the `local` connection - sshd is not required
-  delegate_to: "{{ bastion_host.instances[0].public_ip_address if not bastion_host|skipped else 'localhost' }}"
+  delegate_to: "{{ bastion_host.instances[0].public_ip_address if bastion_host is not skipped else 'localhost' }}"
   when: not is_window
 
 - name: Wait for winrm service to become available
