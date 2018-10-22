@@ -265,6 +265,7 @@
         hostname: "{{ ec2_instance_address }}"
         groups: "{{ ec2_launch_groups }},windows"
         ec2_instance: "{{ ec2_instance }}"
+        inventory_dir: "{{ inventory_dir }}"
       changed_when: false
   when: is_window
 
