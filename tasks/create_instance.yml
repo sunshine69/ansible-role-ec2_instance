@@ -215,7 +215,7 @@
     host: "{{ ec2_instance_address }}"
     delay: 1
     timeout: 600
-  when: is_window
+  when: is_window and not launch_only|default()
 
 - block:
     - name: Add host ec2_instance_address to be used for delegation in the next task
