@@ -115,7 +115,7 @@
       wait: yes
       volumes: "{{ ec2_volumes | default(default_volumes)}}"
       vpc_subnet_id: "{{ ami_build_subnets.subnets[0].id }}"
-      assign_public_ip: "{{ ec2_instance_is_public }}"
+      assign_public_ip: "{{ ec2_instance_is_public if ec2_instance_is_public else omit }}"
       instance_tags: "{{ ec2_instance_build_tags }}"
       instance_profile_name: "{{ ec2_instance_profile|default(omit) }}"
       private_ip: "{{ ec2_instance_private_ip_address|default(omit) }}"
