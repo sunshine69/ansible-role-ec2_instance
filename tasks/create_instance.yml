@@ -115,7 +115,7 @@
       wait: yes
       volumes: "{{ ec2_volumes | default(default_volumes)}}"
       vpc_subnet_id: "{{ ami_build_subnets.subnets[0].id }}"
-      assign_public_ip: "{{ ec2_instance_is_public }}"
+      assign_public_ip: "{{ ec2_instance_is_public if ec2_instance_is_public else omit }}"
       instance_tags: "{{ ec2_instance_build_tags }}"
       instance_profile_name: "{{ ec2_instance_profile|default(omit) }}"
       private_ip: "{{ ec2_instance_private_ip_address|default(omit) }}"
@@ -215,7 +215,7 @@
     host: "{{ ec2_instance_address }}"
     delay: 1
     timeout: 600
-  when: is_window
+  when: is_window and not launch_only|default()
 
 - block:
     - name: Add host ec2_instance_address to be used for delegation in the next task
@@ -265,6 +265,7 @@
         hostname: "{{ ec2_instance_address }}"
         groups: "{{ ec2_launch_groups }},windows"
         ec2_instance: "{{ ec2_instance }}"
+        inventory_dir: "{{ inventory_dir }}"
       changed_when: false
   when: is_window
 
