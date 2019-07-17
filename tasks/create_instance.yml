@@ -142,6 +142,7 @@
       profile: "{{ profile|default(omit) }}"
       device_id: "{{ ec2_build_instance.instances[0].id }}"
       public_ip: "{{ ec2_eip }}"
+      private_ip_address: "{{ ec2_instance_private_ip_address|default(ec2_build_instance.instances[0].private_ip) }}"
       reuse_existing_ip_allowed: yes
       release_on_disassociation: "{{ ec2_eip_release_on_disassociation|default(false) }}"
       in_vpc: yes
