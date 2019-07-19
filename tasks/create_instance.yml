@@ -187,7 +187,7 @@
       "tag:Application": bastion
       instance-state-name: "running"
   register: bastion_host
-  when: not ssh_via_public and not is_window
+  when: not ssh_via_public and not is_window and not (skip_bastion|default())
 
 - name: set ec2_instance_address fact
   set_fact:
@@ -208,7 +208,7 @@
     delay: 1
   # note that `delegate_to: localhost` below will work over the `local` connection - sshd is not required
   delegate_to: "{{ bastion_host.instances[0].public_ip_address if bastion_host is not skipped else 'localhost' }}"
-  when: not is_window
+  when: not is_window and not (skip_bastion|default())
 
 - name: Wait for winrm service to become available
   wait_for:
