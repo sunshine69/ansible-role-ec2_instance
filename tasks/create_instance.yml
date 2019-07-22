@@ -226,35 +226,40 @@
         ansible_ssh_private_key_file: "~/.ssh/{{ ec2_key_pair }}"
       when: ssh_via_public|default(False)
 
-    - raw: which python2 python
+    - raw: which python3 python
       register: finding_python
       changed_when: False
       failed_when: False
       delegate_to: "{{ ec2_instance_address }}"
+      remote_user: "{{ ec2_instance_user|default(bastion_ansible_user|default('ubuntu')) }}"
 
     - name: Install python-minimal
-      raw: apt-get update && apt-get -y install python-minimal
+      raw: apt-get update && apt-get -y install python3-minimal
       become: yes
       delegate_to: "{{ ec2_instance_address }}"
       when: not finding_python.stdout_lines
+      remote_user: "{{ ec2_instance_user|default(bastion_ansible_user|default('ubuntu')) }}"
 
     - name: Wait for cloud-init to complete
       wait_for:
         path: /run/cloud-init/result.json
       delegate_to: "{{ ec2_instance_address }}"
       become: yes
+      remote_user: "{{ ec2_instance_user|default(bastion_ansible_user|default('ubuntu')) }}"
 
     - include_tasks: setup-filesystem.yml
       with_items: "{{ (ec2_vol_facts_out|default({})).volumes|default([]) }}"
       loop_control:
         loop_var: vol_item
+      vars:
+        remote_user: "{{ ec2_instance_user|default(bastion_ansible_user|default('ubuntu')) }}"
 
     # Update host to set ansible_python_interpreter back
     - add_host:
         hostname: "{{ ec2_instance_address }}"
         groups: "{{ ec2_launch_groups }}"
         ansible_ssh_private_key_file: "~/.ssh/{{ ec2_key_pair }}"
-        ansible_python_interpreter: /usr/bin/python
+        ansible_python_interpreter: /usr/bin/python3
         ec2_instance: "{{ ec2_instance }}"
         inventory_dir: "{{ inventory_dir }}"
       changed_when: false
