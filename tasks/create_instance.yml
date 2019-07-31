@@ -91,7 +91,7 @@
     set_fact:
     args:
       ec2_instance_build_tags: "{{ ec2_instance_build_tags|default({})|combine({item.key: item.value}) }}"
-    with_dict: "{{ ec2_instance_tags }}"
+    with_dict: "{{ ec2_instance_tags|combine({'Encryption': (ami.tags|default({})).Encryption|default('disabled')}) }}"
     when: item.value != ""
 
   - debug:
