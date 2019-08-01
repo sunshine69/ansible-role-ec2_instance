@@ -11,7 +11,7 @@
       Can not find the base image. Ensure your tags are correct or set ami_image directly
       Your search tag is: {{ ami_search_tags|default('') }}
       Your ami_image is: {{ ami_image|default('') }}
-  when: not ami
+  when: not (ami is defined and ami.keys()|length > 0)
 
 - name: set instance search filters
   set_fact:
@@ -77,97 +77,97 @@
         profile: "{{ profile|default(omit) }}"
         filters: "{{ ec2_instance_persistent_vol_tags_filter }}"
       register: ec2_vol_facts_out
-  when: ec2_instance_persistent_vol_tags
+  when: ec2_instance_persistent_vol_tags is defined and ec2_instance_persistent_vol_tags.keys()|length > 0
 
 - block:
-  - name: Get subnets ids based on ec2_subnet_search_filter
-    ec2_vpc_subnet_facts:
-      region: "{{ region }}"
-      profile: "{{ profile|default(omit) }}"
-      filters: "{{ ec2_subnet_search_filter }}"
-    register: ami_build_subnets
+    - name: Get subnets ids based on ec2_subnet_search_filter
+      ec2_vpc_subnet_facts:
+        region: "{{ region }}"
+        profile: "{{ profile|default(omit) }}"
+        filters: "{{ ec2_subnet_search_filter }}"
+      register: ami_build_subnets
 
-  - name: Set instance build tags
-    set_fact:
-    args:
-      ec2_instance_build_tags: "{{ ec2_instance_build_tags|default({})|combine({item.key: item.value}) }}"
-    with_dict: "{{ ec2_instance_tags|combine({'Encryption': (ami.tags|default({})).Encryption|default('disabled')}) }}"
-    when: item.value != ""
+    - name: Set instance build tags
+      set_fact:
+      args:
+        ec2_instance_build_tags: "{{ ec2_instance_build_tags|default({})|combine({item.key: item.value}) }}"
+      with_dict: "{{ ec2_instance_tags|combine({'Encryption': (ami.tags|default({})).Encryption|default('disabled')}) }}"
+      when: item.value != ""
 
-  - debug:
-      msg: "Instance profile: {{ec2_instance_profile|default('None')}}"
-      verbosity: 2
+    - debug:
+        msg: "Instance profile: {{ec2_instance_profile|default('None')}}"
+        verbosity: 2
 
-  - debug:
-      msg: "ec2_instance_build_tags: {{ ec2_instance_build_tags }}"
-      verbosity: 2
+    - debug:
+        msg: "ec2_instance_build_tags: {{ ec2_instance_build_tags }}"
+        verbosity: 2
 
-  - name: Launch EC2 instance
-    ec2:
-      region: "{{ region }}"
-      profile: "{{ profile|default(omit) }}"
-      key_name: "{{ ec2_key_pair }}"
-      group: "{{ ec2_instance_security_groups }}"
-      instance_type: "{{ ec2_instance_type }}"
-      monitoring: "{{ ec2_instance_monitoring }}"
-      user_data: "{{ ec2_instance_user_data|default(lookup('file', 'userdata.sh')) }}"
-      image: "{{ ami.image_id }}"
-      wait: yes
-      volumes: "{{ ec2_volumes | default(default_volumes)}}"
-      vpc_subnet_id: "{{ ami_build_subnets.subnets[0].id }}"
-      assign_public_ip: "{{ ec2_instance_is_public if ec2_instance_is_public else omit }}"
-      instance_tags: "{{ ec2_instance_build_tags }}"
-      instance_profile_name: "{{ ec2_instance_profile|default(omit) }}"
-      private_ip: "{{ ec2_instance_private_ip_address|default(omit) }}"
-    register: ec2_build_instance
+    - name: Launch EC2 instance
+      ec2:
+        region: "{{ region }}"
+        profile: "{{ profile|default(omit) }}"
+        key_name: "{{ ec2_key_pair }}"
+        group: "{{ ec2_instance_security_groups }}"
+        instance_type: "{{ ec2_instance_type }}"
+        monitoring: "{{ ec2_instance_monitoring }}"
+        user_data: "{{ ec2_instance_user_data|default(lookup('file', 'userdata.sh')) }}"
+        image: "{{ ami.image_id }}"
+        wait: yes
+        volumes: "{{ ec2_volumes | default(default_volumes)}}"
+        vpc_subnet_id: "{{ ami_build_subnets.subnets[0].id }}"
+        assign_public_ip: "{{ ec2_instance_is_public if ec2_instance_is_public else omit }}"
+        instance_tags: "{{ ec2_instance_build_tags }}"
+        instance_profile_name: "{{ ec2_instance_profile|default(omit) }}"
+        private_ip: "{{ ec2_instance_private_ip_address|default(omit) }}"
+      register: ec2_build_instance
 
 
-  - name: "Auto allocate eip if variable ec2_eip has the value of 'auto'"
-    ec2_eip:
-      profile: "{{ profile|default(omit) }}"
-      region: "{{ region }}"
-      reuse_existing_ip_allowed: yes
-      state: present
-    register: eip_auto
-    when: ec2_eip is defined and ec2_eip == 'auto'
+    - name: "Auto allocate eip if variable ec2_eip has the value of 'auto'"
+      ec2_eip:
+        profile: "{{ profile|default(omit) }}"
+        region: "{{ region }}"
+        reuse_existing_ip_allowed: yes
+        state: present
+      register: eip_auto
+      when: ec2_eip is defined and ec2_eip == 'auto'
 
-  - name: Set fact to set new allocated ec2_eip
-    set_fact:
-      ec2_eip: "{{ eip_auto.public_ip }}"
-    when: ec2_eip is defined and ec2_eip == 'auto'
+    - name: Set fact to set new allocated ec2_eip
+      set_fact:
+        ec2_eip: "{{ eip_auto.public_ip }}"
+      when: ec2_eip is defined and ec2_eip == 'auto'
 
-  - name: set ec2 EIP if available
-    ec2_eip:
-      region: "{{ region }}"
-      profile: "{{ profile|default(omit) }}"
-      device_id: "{{ ec2_build_instance.instances[0].id }}"
-      public_ip: "{{ ec2_eip }}"
-      private_ip_address: "{{ ec2_instance_private_ip_address|default(ec2_build_instance.instances[0].private_ip) }}"
-      reuse_existing_ip_allowed: yes
-      release_on_disassociation: "{{ ec2_eip_release_on_disassociation|default(false) }}"
-      in_vpc: yes
-    when: ec2_eip is defined
+    - name: set ec2 EIP if available
+      ec2_eip:
+        region: "{{ region }}"
+        profile: "{{ profile|default(omit) }}"
+        device_id: "{{ ec2_build_instance.instances[0].id }}"
+        public_ip: "{{ ec2_eip }}"
+        private_ip_address: "{{ ec2_instance_private_ip_address|default(ec2_build_instance.instances[0].private_ip) }}"
+        reuse_existing_ip_allowed: yes
+        release_on_disassociation: "{{ ec2_eip_release_on_disassociation|default(false) }}"
+        in_vpc: yes
+      when: ec2_eip is defined
 
-  - name: Get newly created instances facts
-    ec2_instance_facts:
-      region: "{{ region }}"
-      profile: "{{ profile|default(omit) }}"
-      filters: "{{ ec2_instance_search_filters }}"
-    register: ec2_instances
+    - name: Get newly created instances facts
+      ec2_instance_facts:
+        region: "{{ region }}"
+        profile: "{{ profile|default(omit) }}"
+        filters: "{{ ec2_instance_search_filters }}"
+      register: ec2_instances
 
-  - name: Set fact ec2_instance
-    set_fact:
-      ec2_instance: "{{ ec2_instances.instances[0] }}"
+    - name: Set fact ec2_instance
+      set_fact:
+        ec2_instance: "{{ ec2_instances.instances[0] }}"
 
-  - name: even after wait_for we still need to pause
-    pause:
-      seconds: 10
-  when: not existing_ec2_instances.instances or ec2_instance_termination|bool
+    - name: even after wait_for we still need to pause
+      pause:
+        seconds: 10
+  when: existing_ec2_instances.instances|length == 0 or ec2_instance_termination|bool
 
 - name: Set fact ec2_instance for existing_ec2_instance
   set_fact:
     ec2_instance: "{{ existing_ec2_instances.instances[0] }}"
-  when: existing_ec2_instances.instances and not ec2_instance_termination|bool
+  when: existing_ec2_instances.instances|length > 0 and not ec2_instance_termination|bool
 
 - name: Attach persistent volumes to the instance
   ec2_vol:
@@ -237,7 +237,7 @@
       raw: apt-get update && apt-get -y install python3-minimal
       become: yes
       delegate_to: "{{ ec2_instance_address }}"
-      when: not finding_python.stdout_lines
+      when: finding_python.stdout_lines|length == 0
       remote_user: "{{ ec2_instance_user|default(bastion_ansible_user|default('ubuntu')) }}"
 
     - name: Wait for cloud-init to complete
@@ -285,7 +285,7 @@
       zone: "{{ route53_internal_zone }}"
       record: "{{ ec2_instance_private_dns }}"
       value: "{{ ec2_instance.private_ip_address }}"
-  when: ec2_instance_private_dns is defined and ec2_instance_private_dns
+  when: ec2_instance_private_dns is defined and ec2_instance_private_dns != ''
 
 - include_role:
     name: aws_route53
@@ -296,7 +296,7 @@
       zone: "{{ ec2_instance_route53_public_zone|default('xvt.technology') }}"
       record: "{{ ec2_instance_public_dns }}"
       value: "{{ ec2_instance.public_ip_address }}"
-  when: ec2_instance_public_dns is defined and ec2_instance_public_dns
+  when: ec2_instance_public_dns is defined and ec2_instance_public_dns != ''
 
 - block:
     - name: Get target group fact
@@ -308,7 +308,7 @@
       register: ec2_target_group_facts
     - fail:
         msg: "ERROR - ec2_instance_target_target_group is defined and set to {{ ec2_instance_target_target_group }} but we can not find any target_group with that name"
-      when: not ec2_target_group_facts.target_groups
+      when: ec2_target_group_facts.target_groups|length == 0
     # Requires this PR https://github.com/ansible/ansible/pull/26483
     - name: Register the ec2 instance with target group
       elb_target:
@@ -317,8 +317,8 @@
         state: present
         profile: "{{ profile|default(omit) }}"
         region: "{{ region }}"
-      when: ec2_target_group_facts.target_groups is defined and ec2_target_group_facts.target_groups
-  when: ec2_instance_target_target_group is defined and ec2_instance_target_target_group
+      when: ec2_target_group_facts.target_groups is defined and ec2_target_group_facts.target_groups|length > 0
+  when: ec2_instance_target_target_group is defined and ec2_instance_target_target_group|length > 0
 
 - debug:
     var: ec2_instance
