@@ -197,6 +197,7 @@
   add_host:
     hostname: "{{ bastion_host.instances[0].public_ip_address }}"
     ansible_user: "{{ bastion_ansible_user|default(ec2_instance_user|default('ubuntu')) }}"
+    ansible_ssh_user: "{{ bastion_ansible_user|default(ec2_instance_user|default('ubuntu')) }}"
     ansible_ssh_private_key_file: "~/.ssh/{{ ec2_key_pair_bastion }}"
   when: bastion_host is not skipped and ec2_key_pair_bastion and not is_window
 
@@ -279,6 +280,7 @@
         ansible_python_interpreter: "{{ ec2_python_interpreter|default('/usr/bin/python3') }}"
         ec2_instance: "{{ ec2_instance }}"
         inventory_dir: "{{ inventory_dir }}"
+        ansible_user: "{{ ec2_instance_user|default(ansible_user|default('ubuntu')) }}"
       changed_when: false
   when: not is_window
 
