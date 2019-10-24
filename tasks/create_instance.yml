@@ -260,7 +260,7 @@
 
     - name: Wait for cloud-init to complete
       wait_for:
-        path: /run/cloud-init/result.json
+        path: /var/lib/cloud/data/result.json
       delegate_to: "{{ ec2_instance_address }}"
       become: yes
       remote_user: "{{ ec2_instance_user|default(bastion_ansible_user|default('ubuntu')) }}"
