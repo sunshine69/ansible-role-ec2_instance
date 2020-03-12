@@ -24,7 +24,7 @@
     verbosity: 2
 
 - name: Get any existing instances that require termination
-  ec2_instance_facts:
+  ec2_instance_info:
     region: "{{ region }}"
     profile: "{{ profile|default(omit) }}"
     filters: "{{ ec2_instance_search_filters }}"
@@ -72,7 +72,7 @@
         verbosity: 2
 
     - name: Detect persistent volumes for ec2 by tags
-      ec2_vol_facts:
+      ec2_vol_info:
         region: "{{ region }}"
         profile: "{{ profile|default(omit) }}"
         filters: "{{ ec2_instance_persistent_vol_tags_filter }}"
@@ -81,7 +81,7 @@
 
 - block:
     - name: Get subnets ids based on ec2_subnet_search_filter
-      ec2_vpc_subnet_facts:
+      ec2_vpc_subnet_info:
         region: "{{ region }}"
         profile: "{{ profile|default(omit) }}"
         filters: "{{ ec2_subnet_search_filter }}"
@@ -149,7 +149,7 @@
       when: ec2_eip is defined
 
     - name: Get newly created instances facts
-      ec2_instance_facts:
+      ec2_instance_info:
         region: "{{ region }}"
         profile: "{{ profile|default(omit) }}"
         filters: "{{ ec2_instance_search_filters }}"
@@ -180,7 +180,7 @@
   with_items: "{{ (ec2_vol_facts_out|default({})).volumes|default([]) }}"
 
 - name: find bastion host
-  ec2_instance_facts:
+  ec2_instance_info:
     region: "{{ region }}"
     profile: "{{ profile|default(omit) }}"
     filters:
@@ -319,7 +319,7 @@
 
 - block:
     - name: Get target group fact
-      elb_target_group_facts:
+      elb_target_group_info:
         profile: "{{ profile|default(omit) }}"
         region: "{{ region }}"
         names:
