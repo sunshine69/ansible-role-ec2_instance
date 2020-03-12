@@ -256,7 +256,7 @@
       when: finding_python.stdout_lines|length == 0
       remote_user: "{{ ec2_instance_user|default(bastion_ansible_user|default('ubuntu')) }}"
       ignore_errors: yes
-      when: install_python_out.failed
+      when: install_python_out is skipped or install_python_out.failed
 
     - name: Wait for cloud-init to complete
       wait_for:
